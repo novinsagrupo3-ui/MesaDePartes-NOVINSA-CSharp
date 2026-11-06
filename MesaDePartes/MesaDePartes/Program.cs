@@ -11,7 +11,7 @@ namespace MesaDePartes2
         //RUC VALIDO: 20100017491
         static List<string> rucs = new List<string>(), razones = new List<string>(), documentos = new List<string>(), asuntos = new List<string>(), areas = new List<string>(), contactos = new List<string>(), pendiente = new List<string>();
         static List<int> prioridades = new List<int>(), Cfolios = new List<int>();
-
+        static List<DateTime> fechasRegistro = new List<DateTime>();
 
         static bool ValidarRUC(string ruc)
         {
@@ -98,16 +98,16 @@ namespace MesaDePartes2
             Console.WriteLine("RUC validado correctamente.");
 
 
-            Console.Write("Ingrese razon social [nombre de la empresa o entidad]: ");
+            Console.Write("Ingrese razon social: ");
             string razonSocial = Console.ReadLine() ?? "";
 
-            Console.Write("Ingrese tipo de documento [Solicitud, Carta, Oficio, Reclamo]: ");
+            Console.Write("Ingrese tipo de documento: ");
             string tipoDocumento = Console.ReadLine() ?? "";
 
             Console.Write("Ingrese asunto [motivo del tramite]: ");
             string asunto = Console.ReadLine() ?? "";
 
-            Console.Write("Ingrese area de destino [Administracion, Contabilidad, Gerencia]: ");
+            Console.Write("Ingrese area de destino: ");
             string areaDestino = Console.ReadLine() ?? "";
 
             Console.Write("Ingrese numero de folios [cantidad de hojas]: ");
@@ -133,6 +133,10 @@ namespace MesaDePartes2
             contactos.Add(contacto);
             prioridades.Add(prioridad);
             pendiente.Add("PENDIENTE");
+            fechasRegistro.Add(DateTime.Now);
+
+            Console.WriteLine("Fecha y hora de registro: " +
+                fechasRegistro[fechasRegistro.Count - 1].ToString("dd/MM/yyyy HH:mm:ss"));
         }
         static void BuscarExpedientes()
         {
@@ -154,6 +158,9 @@ namespace MesaDePartes2
             if (hallado == true)
             {
                 Console.WriteLine("RUC encontrado.");
+                Console.WriteLine("Fecha de registro: " + fechasRegistro[i].ToString("dd/MM/yyyy"));
+                Console.WriteLine("Hora de registro: " +
+                    fechasRegistro[i].ToString("HH:mm:ss"));
                 Console.WriteLine($"\nRUC:\t[{rucs[i]}]\nRazón Social:\n{razones[i]}\n\nTipo de Documento: {documentos[i]}\nAsunto: {asuntos[i]}\nÁrea: {areas[i]}\nN. de Folios: {Cfolios[i]}\nContacto: {contactos[i]}\nPrioridad: {prioridades[i]}\nESTADO: {pendiente[i]}");
 
             }
