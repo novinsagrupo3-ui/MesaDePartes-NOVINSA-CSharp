@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +42,6 @@ namespace MesaDePartes2
                     return false;
                 }
             }
-            // Calculamos el digito verificador
             int[] pesos = { 5, 4, 3, 2, 7, 6, 5, 4, 3, 2 };
             int suma = 0;
             for (int i = 0; i < 10; i++)
@@ -67,62 +67,78 @@ namespace MesaDePartes2
             }
             return true;
         }
-        static void RegistrarExpediente()
+        static void RegistrarExpediente(int indiceCliente = -1)
         {
             Console.WriteLine("================================");
             Console.WriteLine("     REGISTRO DE EXPEDIENTE");
             Console.WriteLine("================================");
-
-
             string ruc = "";
-            bool rucValido = false;
-
-            do
+            string razonSocial = "";
+            if (indiceCliente == -1)
             {
-                Console.Write("Ingrese RUC, si desea volver digite 0: ");
-                ruc = Console.ReadLine() ?? "";
-                if (ruc == "0")
+                bool rucValido = false;
+                do
                 {
+                    Console.Write("Ingrese RUC, si desea volver digite 0: ");
+                    ruc = Console.ReadLine() ?? "";
+                    if (ruc == "0")
+                        return;
+                    rucValido = ValidarRUC(ruc);
+
+                    if (!rucValido)
+                        Console.WriteLine("Intente nuevamente.");
+
+                } while (!rucValido);
+
+                Console.WriteLine("RUC validado correctamente.");
+                do
+                {
+                    Console.Write("Ingrese razon social: ");
+                    razonSocial = Console.ReadLine() ?? "";
+                    if (string.IsNullOrWhiteSpace(razonSocial))
+                        Console.WriteLine("ERROR: La razon social no puede estar vacia.");
+                } while (string.IsNullOrWhiteSpace(razonSocial));
+                razonSocial = razonSocial.Trim();
+            }
+            else
+            {
+                if (indiceCliente < 0 || indiceCliente >= rucs.Count)
+                {
+                    Console.WriteLine("ERROR: Cliente no encontrado.");
                     return;
                 }
+                ruc = rucs[indiceCliente];
+                razonSocial = razones[indiceCliente];
 
-                rucValido = ValidarRUC(ruc);
-
-                if (rucValido == false)
-                {
-                    Console.WriteLine("Intente nuevamente.");
-                }
-
-            } while (rucValido == false);
-
-            Console.WriteLine("RUC validado correctamente.");
-
-
-            Console.Write("Ingrese razon social: ");
-            string razonSocial = Console.ReadLine() ?? "";
-
+                Console.WriteLine("\nREGISTRAR NUEVA SOLICITUD O RECLAMO");
+                Console.WriteLine("RUC: " + ruc);
+                Console.WriteLine("Razon social: " + razonSocial);
+            }
             Console.Write("Ingrese tipo de documento: ");
             string tipoDocumento = Console.ReadLine() ?? "";
-
             Console.Write("Ingrese asunto [motivo del tramite]: ");
             string asunto = Console.ReadLine() ?? "";
-
             Console.Write("Ingrese area de destino: ");
             string areaDestino = Console.ReadLine() ?? "";
-
             Console.Write("Ingrese numero de folios [cantidad de hojas]: ");
             int folios;
             while (!int.TryParse(Console.ReadLine(), out folios) || folios <= 0)
                 Console.Write("Error: Ingrese un numero de folios mayor que 0: ");
-
-            Console.Write("Ingrese contacto [correo electronico o telefono]: ");
-            string contacto = Console.ReadLine() ?? "";
-
+            string contacto = "";
+            if (indiceCliente == -1)
+            {
+                Console.Write("Ingrese contacto [correo electronico o telefono]: ");
+                contacto = Console.ReadLine() ?? "";
+            }
+            else
+            {
+                contacto = contactos[indiceCliente];
+                Console.WriteLine("Contacto registrado: " + contacto);
+            }
             Console.Write("Ingrese prioridad [1 = Alta, 2 = Media, 3 = Baja]: ");
             int prioridad;
             while (!int.TryParse(Console.ReadLine(), out prioridad) || prioridad < 1 || prioridad > 3)
                 Console.Write("Error: Seleccione 1 (Alta), 2 (Media) o 3 (Baja): ");
-
             Console.WriteLine("\nDatos ingresados correctamente.");
             rucs.Add(ruc);
             razones.Add(razonSocial);
@@ -134,50 +150,165 @@ namespace MesaDePartes2
             prioridades.Add(prioridad);
             pendiente.Add("PENDIENTE");
             fechasRegistro.Add(DateTime.Now);
-
             Console.WriteLine("Fecha y hora de registro: " +
                 fechasRegistro[fechasRegistro.Count - 1].ToString("dd/MM/yyyy HH:mm:ss"));
         }
         static void BuscarExpedientes()
         {
             Console.WriteLine("================================");
-            Console.WriteLine("        BUSCAR EXPEDIENTE");
+            Console.WriteLine("        BUSCAR EXPEDIENTES");
             Console.WriteLine("================================");
-            Console.WriteLine("Ingresa el número RUC: ");
+
+            Console.Write("Ingrese el numero RUC: ");
             string ruc = Console.ReadLine() ?? "";
-            bool hallado = false;
-            int i = 0;
-            for (i = 0; i < rucs.Count; i++)
+            List<int> encontrados = new List<int>();
+            for (int i = 0; i < rucs.Count; i++)
             {
                 if (ruc == rucs[i])
                 {
-                    hallado = true;
-                    break;
+                    encontrados.Add(i);
                 }
             }
-            if (hallado == true)
+            if (encontrados.Count == 0)
             {
-                Console.WriteLine("RUC encontrado.");
-                Console.WriteLine("Fecha de registro: " + fechasRegistro[i].ToString("dd/MM/yyyy"));
-                Console.WriteLine("Hora de registro: " +
-                    fechasRegistro[i].ToString("HH:mm:ss"));
-                Console.WriteLine($"\nRUC:\t[{rucs[i]}]\nRazón Social:\n{razones[i]}\n\nTipo de Documento: {documentos[i]}\nAsunto: {asuntos[i]}\nÁrea: {areas[i]}\nN. de Folios: {Cfolios[i]}\nContacto: {contactos[i]}\nPrioridad: {prioridades[i]}\nESTADO: {pendiente[i]}");
-
+                Console.WriteLine("El RUC no existe en el registro.");
+                return;
             }
-            else Console.WriteLine("El RUC no existe en el registro.");
+            Console.WriteLine("\nRUC encontrado.");
+            Console.WriteLine("Razon social: " + razones[encontrados[0]]);
+            Console.WriteLine("\nEXPEDIENTES ENCONTRADOS:");
+            for (int i = 0; i < encontrados.Count; i++)
+            {
+                int posicion = encontrados[i];
+
+                Console.WriteLine($"\n{i + 1}. {asuntos[posicion]}");
+                Console.WriteLine("   Tipo: " + documentos[posicion]);
+                Console.WriteLine("   Estado: " + pendiente[posicion]);
+            }
+            Console.WriteLine("\n0. Volver al menu principal");
+            Console.Write("\nSeleccione el numero del expediente: ");
+            int seleccion;
+            if (!int.TryParse(Console.ReadLine(), out seleccion))
+            {
+                Console.WriteLine("ERROR: Ingrese un numero valido.");
+                return;
+            }
+            if (seleccion == 0)
+                return;
+            if (seleccion < 1 || seleccion > encontrados.Count)
+            {
+                Console.WriteLine("ERROR: El expediente seleccionado no existe.");
+                return;
+            }
+            int iSeleccionado = encontrados[seleccion - 1];
+            Console.WriteLine("\n================================");
+            Console.WriteLine("      DETALLE DEL EXPEDIENTE");
+            Console.WriteLine("================================");
+            Console.WriteLine("Fecha de registro: " +
+                fechasRegistro[iSeleccionado].ToString("dd/MM/yyyy"));
+            Console.WriteLine("Hora de registro: " +
+                fechasRegistro[iSeleccionado].ToString("HH:mm:ss"));
+            Console.WriteLine("RUC: " + rucs[iSeleccionado]);
+            Console.WriteLine("Razon social: " + razones[iSeleccionado]);
+            Console.WriteLine("Tipo de documento: " + documentos[iSeleccionado]);
+            Console.WriteLine("Asunto: " + asuntos[iSeleccionado]);
+            Console.WriteLine("Area: " + areas[iSeleccionado]);
+            Console.WriteLine("N. de folios: " + Cfolios[iSeleccionado]);
+            Console.WriteLine("Contacto: " + contactos[iSeleccionado]);
+            Console.WriteLine("Prioridad: " + prioridades[iSeleccionado]);
+            Console.WriteLine("Estado: " + pendiente[iSeleccionado]);
         }
         static void Mostrar()
         {
             Console.WriteLine("================================");
-            Console.WriteLine("       MOSTRAR EXPEDIENTES");
+            Console.WriteLine("       GESTIONAR EXPEDIENTES");
             Console.WriteLine("================================");
+            if (rucs.Count == 0)
+            {
+                Console.WriteLine("No hay expedientes registrados.");
+                return;
+            }
             for (int i = 0; i < rucs.Count; i++)
             {
-                Console.WriteLine($"{i + 1}. {rucs[i]}");
+                Console.WriteLine($"{i + 1}. RUC: {rucs[i]} | Razon Social: {razones[i]}");
             }
-            return;
-        }
+            Console.WriteLine("\n[0] Volver al menu principal");
+            Console.Write("\nSeleccione el numero del expediente: ");
+            int seleccion;
+            if (!int.TryParse(Console.ReadLine(), out seleccion))
+            {
+                Console.WriteLine("ERROR: Ingrese un numero valido.");
+                return;
+            }
+            if (seleccion == 0)
+            {
+                return;
+            }
+            if (seleccion < 1 || seleccion > rucs.Count)
+            {
+                Console.WriteLine("ERROR: El expediente seleccionado no existe.");
+                return;
+            }
+            int iSeleccionado = seleccion - 1;
+            Console.WriteLine("\n================================");
+            Console.WriteLine("       EXPEDIENTE SELECCIONADO");
+            Console.WriteLine("================================");
+            Console.WriteLine("RUC: " + rucs[iSeleccionado]);
+            Console.WriteLine("Razon Social: " + razones[iSeleccionado]);
+            Console.WriteLine("Asunto: " + asuntos[iSeleccionado]);
+            Console.WriteLine("Estado: " + pendiente[iSeleccionado]);
+            int opcionGestion;
 
+            do
+            {
+                Console.WriteLine("\n================================");
+                Console.WriteLine("       OPCIONES DE GESTION");
+                Console.WriteLine("================================");
+
+                Console.WriteLine("1. Ver informacion completa");
+                Console.WriteLine("2. Registrar nueva solicitud o reclamo");
+                Console.WriteLine("3. Volver al menu principal");
+
+                Console.Write("\nSeleccione una opcion: ");
+
+                if (!int.TryParse(Console.ReadLine(), out opcionGestion))
+                {
+                    Console.WriteLine("ERROR: Ingrese un numero valido.");
+                    opcionGestion = 0;
+                    continue;
+                }
+
+                switch (opcionGestion)
+                {
+                    case 1:
+                        Console.WriteLine("\nINFORMACION DEL EXPEDIENTE");
+                        Console.WriteLine("RUC: " + rucs[iSeleccionado]);
+                        Console.WriteLine("Razon Social: " + razones[iSeleccionado]);
+                        Console.WriteLine("Tipo de documento: " + documentos[iSeleccionado]);
+                        Console.WriteLine("Asunto: " + asuntos[iSeleccionado]);
+                        Console.WriteLine("Area: " + areas[iSeleccionado]);
+                        Console.WriteLine("Numero de folios: " + Cfolios[iSeleccionado]);
+                        Console.WriteLine("Contacto: " + contactos[iSeleccionado]);
+                        Console.WriteLine("Prioridad: " + prioridades[iSeleccionado]);
+                        Console.WriteLine("Estado: " + pendiente[iSeleccionado]);
+                        Console.WriteLine("Fecha de registro: " +
+                            fechasRegistro[iSeleccionado].ToString("dd/MM/yyyy HH:mm:ss"));
+                        break;
+                    case 2:
+                        RegistrarExpediente(iSeleccionado);
+                        break;
+
+                    case 3:
+                        Console.WriteLine("Volviendo al menu principal...");
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR: Opcion no valida.");
+                        break;
+                }
+
+            } while (opcionGestion != 3);
+        }
         static void Editar()
         {
             Console.WriteLine("================================");
@@ -185,16 +316,49 @@ namespace MesaDePartes2
             Console.WriteLine("================================");
             Console.WriteLine("Ingresa el número RUC: ");
             string ruc = Console.ReadLine() ?? "";
-            bool hallado = false;
-            int i = 0;
-            for (i = 0; i < rucs.Count; i++)
+            List<int> encontrados = new List<int>();
+
+            for (int j = 0; j < rucs.Count; j++)
             {
-                if (ruc == rucs[i])
+                if (ruc == rucs[j])
                 {
-                    hallado = true;
-                    break;
+                    encontrados.Add(j);
                 }
             }
+
+            if (encontrados.Count == 0)
+            {
+                Console.WriteLine("No se encontraron expedientes con ese RUC.");
+                return;
+            }
+
+            Console.WriteLine("\nEXPEDIENTES ENCONTRADOS:");
+
+            for (int j = 0; j < encontrados.Count; j++)
+            {
+                int posicion = encontrados[j];
+
+                Console.WriteLine($"{j + 1}. {asuntos[posicion]}");
+                Console.WriteLine("   Estado: " + pendiente[posicion]);
+            }
+
+            Console.WriteLine("\n0. Volver");
+            Console.Write("Seleccione el expediente que desea editar: ");
+
+            int seleccion;
+
+            if (!int.TryParse(Console.ReadLine(), out seleccion)
+                || seleccion < 0 || seleccion > encontrados.Count)
+            {
+                Console.WriteLine("Opcion no valida.");
+                return;
+            }
+
+            if (seleccion == 0)
+                return;
+
+            int i = encontrados[seleccion - 1];
+            bool hallado = true;
             if (hallado == true)
             {
                 bool bucle = true;
@@ -232,7 +396,13 @@ namespace MesaDePartes2
                                     if (string.IsNullOrWhiteSpace(razonSocial))
                                         Console.WriteLine("ERROR: La razon social no puede estar vacia.");
                                 } while (string.IsNullOrWhiteSpace(razonSocial));
-                                razones[i] = razonSocial.Trim();
+                                for (int j = 0; j < rucs.Count; j++)
+                                {
+                                    if (rucs[j] == rucs[i])
+                                    {
+                                        razones[j] = razonSocial.Trim();
+                                    }
+                                }
                                 Console.WriteLine("Razon social actualizada correctamente.");
                                 break;
                             case 3:
@@ -286,6 +456,7 @@ namespace MesaDePartes2
                                 Cfolios[i] = folio;
                                 Console.WriteLine("Numero de folios actualizado correctamente.");
                                 break;
+
                             case 7:
                                 string contacto;
                                 do
@@ -295,7 +466,13 @@ namespace MesaDePartes2
                                     if (string.IsNullOrWhiteSpace(contacto))
                                         Console.WriteLine("ERROR: El contacto no puede estar vacio.");
                                 } while (string.IsNullOrWhiteSpace(contacto));
-                                contactos[i] = contacto.Trim();
+                                for (int j = 0; j < rucs.Count; j++)
+                                {
+                                    if (rucs[j] == rucs[i])
+                                    {
+                                        contactos[j] = contacto.Trim();
+                                    }
+                                }
                                 Console.WriteLine("Contacto actualizado correctamente.");
                                 break;
                             case 8:
@@ -331,7 +508,6 @@ namespace MesaDePartes2
             }
             else Console.WriteLine("RUC inválido");
         }
-
         static void Estado()
         {
             Console.WriteLine("================================");
@@ -339,16 +515,41 @@ namespace MesaDePartes2
             Console.WriteLine("================================");
             Console.WriteLine("Ingresa el número RUC: ");
             string ruc = Console.ReadLine() ?? "";
-            bool hallado = false;
-            int i = 0;
-            for (i = 0; i < rucs.Count; i++)
+            List<int> encontrados = new List<int>();
+            for (int j = 0; j < rucs.Count; j++)
             {
-                if (ruc == rucs[i])
+                if (ruc == rucs[j])
                 {
-                    hallado = true;
-                    break;
+                    encontrados.Add(j);
                 }
             }
+            if (encontrados.Count == 0)
+            {
+                Console.WriteLine("No se encontraron expedientes con ese RUC.");
+                return;
+            }
+            Console.WriteLine("\nEXPEDIENTES ENCONTRADOS:");
+            for (int j = 0; j < encontrados.Count; j++)
+            {
+                int posicion = encontrados[j];
+                Console.WriteLine($"{j + 1}. {asuntos[posicion]}");
+                Console.WriteLine("   Estado: " + pendiente[posicion]);
+            }
+            Console.WriteLine("\n0. Volver");
+            Console.Write("Seleccione el expediente cuyo estado desea actualizar: ");
+            int seleccion;
+            if (!int.TryParse(Console.ReadLine(), out seleccion)
+                || seleccion < 0 || seleccion > encontrados.Count)
+            {
+                Console.WriteLine("Opcion no valida.");
+                return;
+            }
+            if (seleccion == 0)
+                return;
+
+            int i = encontrados[seleccion - 1];
+            bool hallado = true;
+
             if (hallado == true)
             {
                 string eleccion;
@@ -382,9 +583,72 @@ namespace MesaDePartes2
             }
         }
 
+        static void GuardarExpedientes()
+        {
+            using (StreamWriter archivo = new StreamWriter("expedientes.txt"))
+            {
+                for (int i = 0; i < rucs.Count; i++)
+                {
+                    archivo.WriteLine(
+                        rucs[i] + "|" +
+                        razones[i] + "|" +
+                        documentos[i] + "|" +
+                        asuntos[i] + "|" +
+                        areas[i] + "|" +
+                        Cfolios[i] + "|" +
+                        contactos[i] + "|" +
+                        prioridades[i] + "|" +
+                        pendiente[i] + "|" +
+                        fechasRegistro[i].ToString("O")
+                    );
+                }
+            }
+        }
+
+        static void CargarExpedientes()
+        {
+            if (!File.Exists("expedientes.txt"))
+            {
+                return;
+            }
+
+            string[] lineas = File.ReadAllLines("expedientes.txt");
+
+            foreach (string linea in lineas)
+            {
+                string[] datos = linea.Split('|');
+
+                if (datos.Length != 10)
+                {
+                    continue;
+                }
+
+                if (!int.TryParse(datos[5], out int folios) ||
+                    !int.TryParse(datos[7], out int prioridad) ||
+                    !DateTime.TryParse(datos[9], null,
+                        System.Globalization.DateTimeStyles.RoundtripKind,
+                        out DateTime fecha))
+                {
+                    continue;
+                }
+
+                rucs.Add(datos[0]);
+                razones.Add(datos[1]);
+                documentos.Add(datos[2]);
+                asuntos.Add(datos[3]);
+                areas.Add(datos[4]);
+                Cfolios.Add(folios);
+                contactos.Add(datos[6]);
+                prioridades.Add(prioridad);
+                pendiente.Add(datos[8]);
+                fechasRegistro.Add(fecha);
+            }
+        }
+
         static void Main(string[] args)
         {
             int opcion = 0;
+            CargarExpedientes();
 
             do
             {
@@ -392,19 +656,15 @@ namespace MesaDePartes2
                 Console.WriteLine("       SISTEMA DE MESA DE PARTES");
                 Console.WriteLine("                 NOVINSA");
                 Console.WriteLine("=========================================");
-
                 Console.WriteLine("1. Registrar expediente");
                 Console.WriteLine("2. Buscar expediente");
                 Console.WriteLine("3. Editar expediente");
                 Console.WriteLine("4. Derivar y actualizar estado");
-                Console.WriteLine("5. Mostrar expendientes");
+                Console.WriteLine("5. Gestionar expedientes");
                 Console.WriteLine("6. Salir");
-
                 Console.WriteLine("=========================================");
                 Console.Write("Seleccione una opcion: ");
-
                 string entrada = Console.ReadLine() ?? "";
-
                 if (int.TryParse(entrada, out opcion))
                 {
                     switch (opcion)
@@ -425,7 +685,9 @@ namespace MesaDePartes2
                             Mostrar();
                             break;
                         case 6:
-                            Console.WriteLine("Presione cualquier tecla para continuar");
+                            GuardarExpedientes();
+                            Console.WriteLine("Expedientes guardados correctamente.");
+                            Console.WriteLine("Presione cualquier tecla para salir.");
                             break;
                         default:
                             Console.WriteLine("Opcion no valida.");
